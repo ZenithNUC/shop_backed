@@ -16,8 +16,8 @@
         </el-form-item>
         <!-- 按钮 -->
         <el-form-item class="btn">
-          <el-button type="primary">登陆</el-button>
-          <el-button type="info" @click="resetForm('loginForm')">重置</el-button>
+          <el-button type="primary" @click="login()">登陆</el-button>
+          <el-button type="info" @click="resetForm()">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -42,8 +42,23 @@ export default {
     }
   },
   methods: {
+    // 表单重置
     resetForm () {
       this.$refs.loginFormRef.resetFields()
+    },
+    // 登陆表单验证
+    login () {
+      this.$refs.loginFormRef.validate(async valid => {
+        if (!valid) {
+          return valid
+        } else {
+          const { data: res } = await this.$http.post('login', this.loginForm)
+          if (res.meta.status !== 200) {
+            return this.$message.error('登陆失败')
+          }
+          return this.$message.success('登陆成功')
+        }
+      })
     }
   }
 }
