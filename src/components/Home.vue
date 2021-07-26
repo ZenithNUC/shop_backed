@@ -13,19 +13,23 @@
       <!--侧边栏-->
       <el-aside width="200px">
         <el-row class="tac">
-          <el-col :span="12">
+          <el-col>
             <h2>功能菜单</h2>
             <el-menu
               background-color="#f0932b"
               text-color="#ffffff"
-              active-text-color="#ecf0f1">
-              <el-submenu :index="item.id" v-for="item in menuList" :key="item.id">
+              active-text-color="#ecf0f1"
+              unique-opened="true"
+              :router="true"
+              :default-active="activePath"
+              >
+              <el-submenu :index="'/' + item.path" v-for="item in menuList" :key="item.id">
                 <template slot="title">
                   <i class="el-icon-location"></i>
                   <span>{{item.authName}}</span>
                 </template>
                 <el-menu-item-group>
-                  <el-menu-item v-for="subItem in item.children" :index="subItem.id" :key="subItem.id">{{subItem.authName}}</el-menu-item>
+                  <el-menu-item v-for="subItem in item.children" :index="'/' + subItem.path" :key="subItem.id" @click="saveNavState('/' + subItem.path)">{{subItem.authName}}</el-menu-item>
                 </el-menu-item-group>
               </el-submenu>
             </el-menu>
@@ -33,7 +37,9 @@
         </el-row>
       </el-aside>
       <!--右侧内容-->
-      <el-main>Main</el-main>
+      <el-main>
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
@@ -43,11 +49,13 @@ export default {
   name: 'Home',
   data () {
     return {
-      menuList: []
+      menuList: [],
+      activePath: ''
     }
   },
   created () {
     this.getMenuList()
+    this.activePath = window.sessionStorage.getItem('activePath')
   },
   methods: {
     logout () {
@@ -59,8 +67,11 @@ export default {
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       }
-      console.log(res.data)
       this.menuList = res.data
+    },
+    saveNavState (activePath) {
+      window.sessionStorage.setItem('activePath', activePath)
+      this.activePath = activePath
     }
   }
 }
@@ -102,6 +113,15 @@ export default {
 
 .el-aside{
   background-color: #ffbe76;
+  .el-menu{
+    border-right: 0;
+    .el-submenu__title{
+      color: white;
+      .el-submenu__icon-arrow el-icon-arrow-down{
+        color: white;
+      }
+    }
+  }
 }
 .el-main{
   background-color: #c7ecee;
