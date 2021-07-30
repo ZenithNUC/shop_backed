@@ -78,7 +78,7 @@
               <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="删除用户" placement="top" :enterable="false">
-              <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+              <el-button type="danger" icon="el-icon-delete" size="mini" @click="showDeleteDialog(scope.row.username)"></el-button>
             </el-tooltip>
             <el-dialog
               title="修改用户"
@@ -100,6 +100,18 @@
               <span slot="footer" class="dialog-footer">
                 <el-button @click="closeEditDialog">取 消</el-button>
                 <el-button type="primary" @click="editUsers">确 定</el-button>
+              </span>
+            </el-dialog>
+            <el-dialog
+              title="删除用户"
+              :visible.sync="deleteDialogVisible"
+              width="50%"
+              :append-to-body="true"
+              @close="editDialogClose">
+                <span>此操作将永久删除用户{{delUsername}}并不可恢复，请确认是否继续？</span>
+              <span slot="footer" class="dialog-footer">
+                <el-button @click="deleteDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="deleteUser(scope.row.id)">确 定</el-button>
               </span>
             </el-dialog>
           </template>
@@ -159,6 +171,8 @@ export default {
       total: 0,
       addDialogVisible: false,
       editDialogVisible: false,
+      deleteDialogVisible: false,
+      delUsername: '',
       addForm: {
         username: '',
         password: '',
@@ -277,6 +291,19 @@ export default {
         // 刷新用户列表
         await this.getUserList()
       })
+    },
+    async showDeleteDialog (username) {
+      this.delUsername = username
+      this.deleteDialogVisible = true
+    },
+    async deleteUser (userId) {
+      const { data: res } = await this.$http.delete('users/' + userId)
+      if (res.meta.status !== 200) {
+        this.$message.error('删除用户失败')
+      }
+      this.$message.success('删除用户成功')
+      this.deleteDialogVisible = false
+      await this.getUserList()
     }
   }
 }
