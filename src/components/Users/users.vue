@@ -283,7 +283,7 @@ export default {
         }
         const { data: res } = await this.$http.put('users/' + this.editForm.id, this.editForm)
         if (res.meta.status !== 200) {
-          this.$message.error('更新用户失败')
+          return this.$message.error('更新用户失败')
         }
         this.$message.success('更新用户成功')
         this.editDialogVisible = false
