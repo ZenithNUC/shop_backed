@@ -56,31 +56,42 @@
               <el-button type="warning" icon="el-icon-setting" size="mini" @click="showSetRightDialog(scope.row)"></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="删除" placement="top" :enterable="false">
-              <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+              <el-button type="danger" icon="el-icon-delete" size="mini" @click="showDeleteDialog(scope.row)"></el-button>
             </el-tooltip>
           </template>
+          <el-dialog
+            title="分配权限"
+            :visible.sync="setRightDialogVisible"
+            width="50%"
+            @close="setRightDialogClose"
+            :append-to-body="true">
+            <el-tree
+              :data="rightlist"
+              :props="treeProps"
+              show-checkbox
+              node-key="id"
+              default-expand-all
+              :default-checked-keys="defaultKeys"
+              ref="treeRef"
+            >
+            </el-tree>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="setRightDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="allotRights">确 定</el-button>
+              </span>
+          </el-dialog>
+          <el-dialog
+            title="删除角色"
+            :visible.sync="deleteDialogVisible"
+            width="50%"
+            :append-to-body="true">
+            <span>此操作将永久删除角色 {{roleName}} 并不可恢复，请确认是否继续？</span>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="deleteDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="deleteRole">确 定</el-button>
+              </span>
+          </el-dialog>
         </el-table-column>
-        <el-dialog
-          title="分配权限"
-          :visible.sync="setRightDialogVisible"
-          width="50%"
-          @close="setRightDialogClose"
-          :append-to-body="true">
-          <el-tree
-            :data="rightlist"
-            :props="treeProps"
-            show-checkbox
-            node-key="id"
-            default-expand-all
-            :default-checked-keys="defaultKeys"
-            ref="treeRef"
-          >
-          </el-tree>
-          <span slot="footer" class="dialog-footer">
-            <el-button @click="setRightDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="allotRights">确 定</el-button>
-          </span>
-        </el-dialog>
       </el-table>
     </el-card>
   </div>
@@ -92,13 +103,15 @@ export default {
     return {
       rolelist: [],
       setRightDialogVisible: false,
+      deleteDialogVisible: false,
       rightlist: [],
       treeProps: {
         label: 'authName',
         children: 'children'
       },
       defaultKeys: [],
-      roleId: ''
+      roleId: '',
+      roleName: ''
     }
   },
   created () {
@@ -139,8 +152,27 @@ export default {
       this.getLeafKeys(role, this.defaultKeys)
       this.setRightDialogVisible = true
     },
+    showDeleteDialog (role) {
+      this.deleteDialogVisible = true
+      this.roleName = role.roleName
+      this.roleId = role.id
+    },
+    async deleteRole () {
+      const { data: res } = await this.$http.delete(`roles/${this.roleId}`)
+      if (res.meta.status !== 200) {
+        return this.$message.error('角色删除失败')
+      }
+      this.$message.success('角色删除成功')
+      this.deleteDialogVisible = false
+      await this.getRoleList()
+    },
+    closeDeleteDialog () {
+      this.roleName = ''
+      this.roleId = ''
+    },
     setRightDialogClose () {
       this.defaultKeys = []
+      this.roleId = ''
     },
     getLeafKeys (node, arr) {
       if (!node.children) {
