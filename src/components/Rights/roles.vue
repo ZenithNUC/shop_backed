@@ -8,7 +8,25 @@
     <el-card class="box-card">
       <el-row>
         <el-col>
-          <el-button type="primary">添加角色</el-button>
+          <el-button type="primary" @click="addDialogVisible = true">添加角色</el-button>
+          <el-dialog
+            title="添加角色"
+            :visible.sync="addDialogVisible"
+            width="50%">
+            <el-form :model="addForm" :rules="addFormRules" ref="addFormRef" label-width="100px">
+              <el-form-item label="角色名" prop="roleName">
+                <el-input v-model="addForm.roleName"></el-input>
+              </el-form-item>
+              <el-form-item label="角色描述" prop="roleDesc">
+                <el-input v-model="addForm.roleDesc"></el-input>
+              </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+              <el-button @click="addDialogVisible = false">取 消</el-button>
+              <el-button @click="addDialogClose">重 置</el-button>
+              <el-button type="primary" @click="addRole">确 定</el-button>
+            </span>
+          </el-dialog>
         </el-col>
       </el-row>
       <el-table
@@ -104,6 +122,7 @@ export default {
       rolelist: [],
       setRightDialogVisible: false,
       deleteDialogVisible: false,
+      addDialogVisible: false,
       rightlist: [],
       treeProps: {
         label: 'authName',
@@ -111,7 +130,20 @@ export default {
       },
       defaultKeys: [],
       roleId: '',
-      roleName: ''
+      roleName: '',
+      addForm: {
+        roleName: '',
+        roleDesc: ''
+      },
+      addFormRules: {
+        roleName: [
+          { required: true, message: '请输入角色名', trigger: 'blur' },
+          { min: 3, max: 12, message: '角色名长度在 3 到 20 个字符', trigger: 'blur' }
+        ],
+        roleDesc: [
+          { message: '请输入角色描述', trigger: 'blur' }
+        ]
+      }
     }
   },
   created () {
@@ -190,6 +222,21 @@ export default {
       this.$message.success('权限分配成功')
       this.setRightDialogVisible = false
       await this.getRoleList()
+    },
+    async addRole () {
+      this.$refs.addFormRef.validate(async valid => {
+        if (!valid) {
+          return
+        }
+        const { data: res } = await this.$http.post('roles', this.addForm)
+        if (res.meta.status !== 201) {
+          this.$message.error('添加角色失败')
+        }
+        this.$message.success('添加角色成功')
+        this.addDialogVisible = false
+        // 刷新用户列表
+        await this.getRoleList()
+      })
     }
   },
   name: 'roles'
