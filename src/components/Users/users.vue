@@ -75,7 +75,7 @@
               <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row.id)"></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="权限分配" placement="top" :enterable="false">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+              <el-button type="warning" icon="el-icon-setting" size="mini" @click="setRoles(scope.row)"></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="删除用户" placement="top" :enterable="false">
               <el-button type="danger" icon="el-icon-delete" size="mini" @click="showDeleteDialog(scope.row.username)"></el-button>
@@ -108,10 +108,26 @@
               width="50%"
               :append-to-body="true"
               @close="editDialogClose">
-                <span>此操作将永久删除用户{{delUsername}}并不可恢复，请确认是否继续？</span>
+              <span>此操作将永久删除用户{{delUsername}}并不可恢复，请确认是否继续？</span>
               <span slot="footer" class="dialog-footer">
                 <el-button @click="deleteDialogVisible = false">取 消</el-button>
                 <el-button type="primary" @click="deleteUser(scope.row.id)">确 定</el-button>
+              </span>
+            </el-dialog>
+            <el-dialog
+              title="权限分配"
+              :visible.sync="rightDialogVisible"
+              width="50%"
+              :append-to-body="true"
+              @close="closeRightDialog">
+              <p>当前用户:{{userInfo.username}}</p>
+              <p>当前角色:{{userInfo.role_name}}</p>
+              <el-select v-model="selectedRoleId" placeholder="请选择角色">
+                <el-option v-for="item in rolelist" :key="item.id" :label="item.roleName" :value="item.id"></el-option>
+              </el-select>
+              <span slot="footer" class="dialog-footer">
+                <el-button @click="rightDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="saveRoleInfo">确 定</el-button>
               </span>
             </el-dialog>
           </template>
@@ -172,6 +188,7 @@ export default {
       addDialogVisible: false,
       editDialogVisible: false,
       deleteDialogVisible: false,
+      rightDialogVisible: false,
       delUsername: '',
       addForm: {
         username: '',
@@ -182,6 +199,10 @@ export default {
       },
       editForm: {
       },
+      selectedRoleId: '',
+      userInfo: {
+      },
+      rolelist: [],
       addFormRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -303,6 +324,30 @@ export default {
       this.$message.success('删除用户成功')
       this.deleteDialogVisible = false
       await this.getUserList()
+    },
+    async setRoles (userinfo) {
+      this.userInfo = userinfo
+      const { data: res } = await this.$http.get('roles')
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取角色列表失败')
+      }
+      this.rolelist = res.data
+      this.rightDialogVisible = true
+    },
+    async saveRoleInfo () {
+      if (!this.selectedRoleId) {
+        return this.$message.error('请选择要分配的角色！')
+      }
+      const { data: res } = await this.$http.put(`users/${this.userInfo.id}/role`, { rid: this.selectedRoleId })
+      if (res.meta.status !== 200) {
+        return this.$message.error('用户分配角色失败')
+      }
+      this.$message.success('用户分配角色成功')
+      await this.getUserList()
+      this.rightDialogVisible = false
+    },
+    closeRightDialog () {
+      this.selectedRoleId = ''
     }
   }
 }
